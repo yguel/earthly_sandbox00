@@ -54,3 +54,34 @@ push-gh-pages:
         git add . && \
         git commit -m "Update documentation" -a || true && \
         git push origin gh-pages
+
+# Push to gh-pages branch but nothing to commit what happens ?
+push-gh-pages-no-commit:
+    FROM +deps
+    # Make sure to securely handle your GITHUB_TOKEN and REPO_URL
+    ARG GIT_CREDENTIALS
+    ARG GIT_REPO_URL
+    ARG GIT_USER_EMAIL
+    ARG GIT_USER_NAME
+    #First clone gh-pages branch into gh-pages directory
+    # if the branch gh-pages exists otherwise create it
+    RUN --no-cache EXIST=$(git clone --branch gh-pages --single-branch https://$GIT_CREDENTIALS@$GIT_REPO_URL gh-pages && echo "YES" || echo "NO") && \
+        if [ "$EXIST" = "YES" ]; \
+            then echo "Documentation branch gh-pages exists, updating it"; \
+        else \
+            echo "Documentation branch gh-pages does not exist, creating it" && \
+            git clone https://$GIT_CREDENTIALS@$GIT_REPO_URL gh-pages && \
+            cd gh-pages && git checkout -b gh-pages && \
+            git rm -rf . && \
+            cd ..; \
+        fi
+    # copy the documentation files to the gh-pages directory
+    # COPY --dir +build_doc/docs/* gh-pages/
+    ##### NOTHING TO COMMIT #####
+    #############################
+    RUN cd gh-pages && \
+        git config --local user.email $GIT_USER_EMAIL && \
+        git config --local user.name $GIT_USER_NAME && \
+        git add . && \
+        git commit -m "Update documentation" -a || true && \
+        git push origin gh-pages
